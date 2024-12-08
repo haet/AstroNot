@@ -6,6 +6,7 @@ import { config } from 'dotenv';
 import { parseArgs } from 'node:util';
 import { sanitizeUrl, sanitizeImageString } from './helpers/sanitize.mjs';
 import { hashString, downloadImage } from './helpers/images.mjs';
+import { convertInternalLinks } from './helpers/links.mjs';
 import { delay } from './helpers/delay.mjs';
 
 // Input Arguments
@@ -123,9 +124,11 @@ const pages = results.map((page) => {
 for (let page of pages) {
   console.info("Fetching from Notion & Converting to Markdown: ", `${page.title} [${page.id}]`);
   const mdblocks = await n2m.pageToMarkdown(page.id);
-  const { parent: mdString } = n2m.toMarkdownString(mdblocks);
+  let { parent: mdString } = n2m.toMarkdownString(mdblocks);
 
   const estimatedReadingTime = readingTime(mdString || '').text;
+
+  mdString = convertInternalLinks(mdString, pages);
 
   // Download Cover Image
   const coverFileName = page.cover ? await downloadImage(page.cover, { isCover: true }) : '';
